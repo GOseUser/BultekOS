@@ -1,0 +1,62 @@
+# Maintainer:  David Spink <yorper_protonmail.com>
+# Maintainer:  Demir Yerli <demiryerli@gmail.com>
+
+pkgname=calamares
+pkgver=3.2.49.1
+pkgrel=0.1
+pkgdesc='Distribution-independent installer framework'
+arch=('x86_64')
+license=(GPL)
+license=('LGPL')
+depends=('kconfig' 'kcoreaddons' 'kiconthemes' 'ki18n' 'kio' 'solid' 'yaml-cpp' 'kpmcore' 'mkinitcpio-openswap'
+         'boost-libs' 'hwinfo' 'qt5-svg' 'polkit-qt5' 'gtk-update-icon-cache' 'plasma-framework'
+         'qt5-xmlpatterns' 'squashfs-tools') # 'pythonqt>=3.2')
+makedepends=('extra-cmake-modules' 'qt5-tools' 'qt5-translations' 'git' 'boost')
+backup=('usr/share/calamares/modules/bootloader.conf'
+        'usr/share/calamares/modules/displaymanager.conf'
+        'usr/share/calamares/modules/initcpio.conf'
+        'usr/share/calamares/modules/unpackfs.conf')
+
+source+=("calamares-"$pkgver".tar.gz")
+sha256sums=('SKIP')
+
+prepare() {
+	#mv calamares ${srcdir}/
+	cd ${srcdir}/calamares
+	sed -i -e 's/"Install configuration files" OFF/"Install configuration files" ON/' CMakeLists.txt
+
+	# patches here
+
+	# change version
+	_ver="$(cat CMakeLists.txt | grep -m3 -e "  VERSION" | grep -o "[[:digit:]]*" | xargs | sed s'/ /./g')"
+	printf 'Version: %s-%s' "${_ver}" "${pkgrel}"
+	sed -i -e "s|\${CALAMARES_VERSION_MAJOR}.\${CALAMARES_VERSION_MINOR}.\${CALAMARES_VERSION_PATCH}|${_ver}-${pkgrel}|g" CMakeLists.txt
+#	sed -i -e "s|CALAMARES_VERSION_RC 1|CALAMARES_VERSION_RC 0|g" CMakeLists.txt
+
+	# change branding
+	#sed -i -e "s/default/cleanjaro/g" src/branding/CMakeLists.txt
+}
+
+build() {
+	cd ${srcdir}/calamares
+
+	mkdir -p build
+	cd build
+        cmake .. \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_INSTALL_PREFIX=/usr \
+              -DCMAKE_INSTALL_LIBDIR=lib \
+              -DWITH_PYTHONQT:BOOL=ON \
+              -DBoost_NO_BOOST_CMAKE=ON \
+              -DSKIP_MODULES="tracking webview interactiveterminal initramfs \
+                              initramfscfg dracut dracutlukscfg \
+                              dummyprocess dummypython dummycpp \
+                              dummypythonqt services-openrc"
+        make
+}
+
+package() {
+	cd ${srcdir}/calamares/build
+	make DESTDIR="$pkgdir" install
+	install -Dm644 "../data/install-icon.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/calamares.svg"
+}
