@@ -2,4 +2,4 @@ root:x:0:root
 adm:x:4:bultek
 wheel:x:10:bultek
 uucp:x:14:bultek
-archie:x:1000:
+bultek:x:1000:
