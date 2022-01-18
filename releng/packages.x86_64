@@ -135,5 +135,4 @@ opendoas
 alacritty
 sudo
 neofetch
-mkinitcpio-openswap
-yay-bin
+yay
